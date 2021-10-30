@@ -72,8 +72,10 @@ namespace m3u8_Downloader {
             UpdateStatus(0, "Setting Base Url");
             var _uArray = url.Split("/").ToList();
 
-            _basePath = _uArray[^1].Replace(".m3u8", "");
-            if (_basePath.Length > 30)
+            _basePath = _uArray[^1];
+            _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
+
+            if (_basePath.Length > 50)
                 _basePath = "index";
 
             _downloadPath = Environment.CurrentDirectory + "\\" + _basePath;
@@ -231,6 +233,10 @@ namespace m3u8_Downloader {
                 }
 
                 UpdateStatus(1);
+            } else {
+                UpdateStatus(0, $"Moving File");
+                File.Move(_basePath + "\\all.ts", Environment.CurrentDirectory + $"\\{_basePath}.ts");
+                UpdateStatus(1);
             }
         }
 
@@ -288,7 +294,7 @@ namespace m3u8_Downloader {
             var readM3u8 = 1;
             var downloadTS = (_videoList.Count == 0 ? 5 : _videoList.Count);
             var mergeTS = 1;
-            var convertMP4 = (cConvert.Checked ? 1 : 0);
+            var convertMP4 = 1;
             var cleanUp = 1;
 
             var total = setBase + readM3u8 + downloadTS + mergeTS + convertMP4 + cleanUp;
