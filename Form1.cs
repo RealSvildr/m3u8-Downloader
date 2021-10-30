@@ -73,6 +73,12 @@ namespace m3u8_Downloader {
             var _uArray = url.Split("/").ToList();
 
             _basePath = _uArray[^1];
+            if (_basePath == "")
+                _basePath = _uArray[^2];
+            if (_basePath == "")
+                _basePath = "index";
+
+
             _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
 
             if (_basePath.Length > 50)
