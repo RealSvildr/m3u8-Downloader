@@ -61,7 +61,7 @@ namespace m3u8_Downloader {
             // cConvert
             // 
             this.cConvert.AutoSize = true;
-            this.cConvert.Location = new System.Drawing.Point(406, 52);
+            this.cConvert.Location = new System.Drawing.Point(406, 55);
             this.cConvert.Name = "cConvert";
             this.cConvert.Size = new System.Drawing.Size(109, 19);
             this.cConvert.TabIndex = 3;
