@@ -13,6 +13,7 @@ namespace m3u8_Downloader {
         private readonly string _convertToMP4 = "ffmpeg -i {0} -acodec copy -vcodec copy {1}"; // ffmpeg -i all.ts -acodec copy -vcodec copy all.mp4
 
         private string _baseURL = "";
+        private string _thisURL = "";
         private List<string> _videoList = new List<string>();
         private List<M3U8> _m3u8List = new List<M3U8>();
         private string _downloadPath = Environment.CurrentDirectory;
@@ -72,12 +73,10 @@ namespace m3u8_Downloader {
             UpdateStatus(0, "Setting Base Url");
             var _uArray = url.Split("/").ToList();
 
-            _basePath = _uArray[^1];
-            if (_basePath == "")
-                _basePath = _uArray[^2];
-            if (_basePath == "")
-                _basePath = "index";
+            while (_uArray[^1] == "")
+                _uArray.RemoveAt(_uArray.Count - 1);
 
+            _basePath = _uArray[^1];
 
             _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
 
@@ -87,7 +86,8 @@ namespace m3u8_Downloader {
             _downloadPath = Environment.CurrentDirectory + "\\" + _basePath;
 
             _uArray.RemoveAt(_uArray.Count - 1);
-            _baseURL = string.Join("/", _uArray) + "/";
+            _thisURL = string.Join("/", _uArray) + "/";
+
             UpdateStatus(1);
         }
 
@@ -105,6 +105,7 @@ namespace m3u8_Downloader {
             try {
                 WebRequest request = WebRequest.Create(url);
                 request.Credentials = CredentialCache.DefaultCredentials;
+                _baseURL = (request.RequestUri.Port == 443 ? "https://" : "http://") + request.RequestUri.Authority;
 
                 using (var response = (HttpWebResponse)request.GetResponse()) {
                     if ((new string[] { "application/x-mpegurl", "vnd.apple.mpegurl", "application/vnd.apple.mpegurl" }).Contains(response.ContentType.ToLower())) {
@@ -114,11 +115,15 @@ namespace m3u8_Downloader {
                             while ((line = _sr.ReadLine()) != null) {
                                 if (line.Contains(".ts")) {
                                     if (!line.Contains("http"))
+                                        line = _thisURL + line;
+                                    else if (line.Contains("/"))
                                         line = _baseURL + line;
 
                                     _videoList.Add(line);
                                 } else if (line.Contains(".m3u8")) {
                                     if (!line.Contains("http"))
+                                        line = _thisURL + line;
+                                    else if (line.Contains("/"))
                                         line = _baseURL + line;
 
                                     var m3u8 = new M3U8() { Url = line };
