@@ -64,9 +64,9 @@ namespace m3u8_Downloader {
                     CheckM3u8List();
                     return;
                 } else
-                    DownloadTS();
+                    DownloadFiles();
 
-                MergeTS();
+                MergeFiles();
                 ConvertToMP4();
                 CleanUp();
 
@@ -198,14 +198,17 @@ namespace m3u8_Downloader {
             UpdateStatus(1);
         }
 
-        public void DownloadTS() {
+        public void DownloadFiles() {
             if (!new DirectoryInfo(_downloadPath).Exists)
                 new DirectoryInfo(_downloadPath).Create();
 
             try {
                 if (!string.IsNullOrEmpty(_videoMap)) {
+                    UpdateStatus(0, $"Downloading Map File");
                     using (var client = new WebClient())
                         client.DownloadFile(_videoMap, $"{_downloadPath}\\map.mp4");
+
+                    UpdateStatus(1);
                 }
 
                 for (var i = 0; i < _videoList.Count; i++) {
@@ -223,7 +226,7 @@ namespace m3u8_Downloader {
             }
         }
 
-        public void MergeTS() {
+        public void MergeFiles() {
             UpdateStatus(0, $"Merging TS Files");
 
             try {
@@ -329,7 +332,10 @@ namespace m3u8_Downloader {
                 return;
             }
 
+            // To Reset Status Bar
             _readMasterm3u8 = false;
+            _videoMap = "";
+
             tLink.Enabled = true;
             cConvert.Enabled = true;
             bDownload.Text = "Download";
@@ -355,8 +361,9 @@ namespace m3u8_Downloader {
             var convertMP4 = 1;
             var cleanUp = 1;
             var readMaster = _readMasterm3u8 ? 2 : 0;
+            var vMap = !string.IsNullOrEmpty(_videoMap) ? 1 : 0;
 
-            var total = setBase + readM3u8 + downloadTS + mergeTS + convertMP4 + cleanUp + readMaster;
+            var total = setBase + readM3u8 + downloadTS + mergeTS + convertMP4 + cleanUp + readMaster + vMap;
 
             progressBar.Maximum = total;
             progressBar.Value += plus;
