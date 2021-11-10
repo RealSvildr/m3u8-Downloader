@@ -9,14 +9,18 @@ using System.Threading;
 
 namespace m3u8_Downloader {
     public partial class Main : Form {
-        private readonly string _mergeTS = "copy /b {0} all.ts"; // copy /b segment1_0_av.ts+segment2_0_av.ts+segment3_0_av.ts all.ts
+        private readonly string _mergeTS = "copy /b {0} all.{1}"; // copy /b segment1_0_av.ts+segment2_0_av.ts+segment3_0_av.ts all.ts
         private readonly string _convertToMP4 = "ffmpeg -i {0} -acodec copy -vcodec copy {1}"; // ffmpeg -i all.ts -acodec copy -vcodec copy all.mp4
 
         private string _url = "";
         private string _baseURL = "";
         private string _thisURL = "";
+
+        private string _extension = "";
+        private string _videoMap = "";
         private List<string> _videoList = new List<string>();
         private List<M3U8> _m3u8List = new List<M3U8>();
+
         private string _downloadPath = Environment.CurrentDirectory;
         private string _basePath = "";
         private string _mergeFiles = "";
@@ -56,7 +60,7 @@ namespace m3u8_Downloader {
             ReadM3u8(_url);
 
             if (_videoList.Count > 0 || _m3u8List.Count > 0) {
-                if (_m3u8List.Count > 0) { 
+                if (_m3u8List.Count > 0) {
                     CheckM3u8List();
                     return;
                 } else
@@ -110,6 +114,9 @@ namespace m3u8_Downloader {
 
         public void ReadM3u8(string url) {
             UpdateStatus(0, "Reading m3u8");
+
+            _videoMap = "";
+            _extension = "";
             _videoList = new List<string>();
             _m3u8List = new List<M3U8>();
 
@@ -124,18 +131,29 @@ namespace m3u8_Downloader {
                             string line = "";
                             string prevLine = "";
                             while ((line = _sr.ReadLine()) != null) {
-                                if (line.Contains(".ts")) {
-                                    if (!line.Contains("http"))
-                                        line = _thisURL + line;
-                                    else if (line.Contains("/"))
+                                if (line.StartsWith("#EXT-X-MAP:URI=")) {
+                                    line = line.Replace("#EXT-X-MAP:URI=", "");
+                                    line = line.Trim('"');
+
+                                    if (line.StartsWith("/"))
                                         line = _baseURL + line;
+                                    else if (!line.Contains("http"))
+                                        line = _thisURL + line;
+
+                                    _videoMap = line;
+                                } else if (line.Contains(".ts") || line.Contains(".m4s")) {
+                                    if (line.StartsWith("/"))
+                                        line = _baseURL + line;
+                                    else if (!line.Contains("http"))
+                                        line = _thisURL + line;
+
 
                                     _videoList.Add(line);
                                 } else if (line.Contains(".m3u8")) {
-                                    if (!line.Contains("http"))
-                                        line = _thisURL + line;
-                                    else if (line.Contains("/"))
+                                    if (line.StartsWith("/"))
                                         line = _baseURL + line;
+                                    else if (!line.Contains("http"))
+                                        line = _thisURL + line;
 
                                     var m3u8 = new M3U8() { Url = line };
 
@@ -156,7 +174,6 @@ namespace m3u8_Downloader {
 
                                 prevLine = line;
                             }
-
                         }
                     } else {
                         Message("Wrong Url!");
@@ -164,9 +181,14 @@ namespace m3u8_Downloader {
                     }
                 }
 
+                if (_videoList.Count > 0)
+                    _extension = _videoList[0].Contains(".ts") ? "ts" : "m4s";
+
             } catch (Exception e) {
                 if (e.Message.Contains("410"))
                     Message("Could not download m3u8 File");
+                else if (e.Message.Contains("404"))
+                    Message("File not found");
                 else
                     Message("Could not read m3u8 File");
 
@@ -181,16 +203,19 @@ namespace m3u8_Downloader {
                 new DirectoryInfo(_downloadPath).Create();
 
             try {
+                if (!string.IsNullOrEmpty(_videoMap)) {
+                    using (var client = new WebClient())
+                        client.DownloadFile(_videoMap, $"{_downloadPath}\\map.mp4");
+                }
+
                 for (var i = 0; i < _videoList.Count; i++) {
                     UpdateStatus(1, $"Downloading Files ({i + 1}/{_videoList.Count})");
 
-                    // Sleep Every 50 to hide from sites that block downloads
-                    if (i % 50 == 0)
+                    if (i % 50 == 0) // Sleep Every 50 to hide from sites that block downloads
                         Thread.Sleep(1500);
 
-                    using (var client = new WebClient()) {
-                        client.DownloadFile(_videoList[i], $"{_downloadPath}\\{i:00}.ts");
-                    }
+                    using (var client = new WebClient())
+                        client.DownloadFile(_videoList[i], $"{_downloadPath}\\{i:00}.{_extension}");
                 }
             } catch (Exception) {
                 Message("An error occoured while downloading the video files");
@@ -203,10 +228,13 @@ namespace m3u8_Downloader {
 
             try {
                 _mergeFiles = "";
-                for (var i = 0; i < _videoList.Count; i++)
-                    _mergeFiles += $"+{i:00}.ts";
+                if (!string.IsNullOrEmpty(_videoMap))
+                    _mergeFiles += "map.mp4";
 
-                var _cmd = _mergeTS.Replace("{0}", _mergeFiles.TrimStart('+'));
+                for (var i = 0; i < _videoList.Count; i++)
+                    _mergeFiles += $"+{i:00}.{_extension}";
+
+                var _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
 
                 var startInfo = new ProcessStartInfo {
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -235,31 +263,36 @@ namespace m3u8_Downloader {
             if (cConvert.Checked) {
                 UpdateStatus(0, $"Converting to MP4");
 
-                try {
-                    var cmd = string.Format(_convertToMP4, $"\"{_basePath}\\all.ts\"", $"\"{_basePath}.mp4\"");
+                if (!string.IsNullOrEmpty(_videoMap))
+                    File.Move(_basePath + "\\all.mp4", $"\\{_basePath}.mp4");
+                else
+                    try {
+                        var _cmd = "";
 
-                    var startInfo = new ProcessStartInfo {
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        FileName = "cmd.exe",
-                        Arguments = "/C " + cmd
-                    };
+                        _cmd = string.Format(_convertToMP4, $"\"{_basePath}\\all.{_extension}\"", $"\"{_basePath}.mp4\"");
 
-                    var process = new Process {
-                        StartInfo = startInfo
-                    };
+                        var startInfo = new ProcessStartInfo {
+                            WindowStyle = ProcessWindowStyle.Hidden,
+                            FileName = "cmd.exe",
+                            Arguments = "/C " + _cmd
+                        };
 
-                    process.Start();
-                    process.WaitForExit();
-                } catch (Exception) {
-                    Message("It was not possible to convert to MP4, check the folder");
-                    Process.Start("explorer.exe", _downloadPath);
-                    ThreadStop();
-                }
+                        var process = new Process {
+                            StartInfo = startInfo
+                        };
+
+                        process.Start();
+                        process.WaitForExit();
+                    } catch (Exception) {
+                        Message("It was not possible to convert to MP4, check the folder");
+                        Process.Start("explorer.exe", _downloadPath);
+                        ThreadStop();
+                    }
 
                 UpdateStatus(1);
             } else {
                 UpdateStatus(0, $"Moving File");
-                File.Move(_basePath + "\\all.ts", Environment.CurrentDirectory + $"\\{_basePath}.ts");
+                File.Move(_basePath + "\\all.ts", $"\\{_basePath}.ts");
                 UpdateStatus(1);
             }
         }

@@ -16,9 +16,16 @@ namespace m3u8_Downloader {
             InitializeComponent();
         }
 
-        public void SetList(List<M3U8> mList ) {
+        public void SetList(List<M3U8> mList) {
             cM3U8.Items.Clear();
-            cM3U8.DisplayMember = "Name";
+
+            if (!string.IsNullOrEmpty(mList[0].Name))
+                cM3U8.DisplayMember = "Name";
+            else if (!string.IsNullOrEmpty(mList[0].Resolution))
+                cM3U8.DisplayMember = "Resolution";
+            else
+                cM3U8.DisplayMember = "Bandwidth";
+
             cM3U8.ValueMember = "Url";
             cM3U8.Items.AddRange(mList.ToArray());
         }
