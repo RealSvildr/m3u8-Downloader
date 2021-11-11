@@ -263,39 +263,38 @@ namespace m3u8_Downloader {
         }
 
         public void ConvertToMP4() {
-            if (cConvert.Checked) {
+            if (!string.IsNullOrEmpty(_videoMap))
+                File.Move(_basePath + "\\all.mp4", Environment.CurrentDirectory + $"\\{_basePath}.mp4");
+            else if (cConvert.Checked) {
                 UpdateStatus(0, $"Converting to MP4");
 
-                if (!string.IsNullOrEmpty(_videoMap))
-                    File.Move(_basePath + "\\all.mp4", $"\\{_basePath}.mp4");
-                else
-                    try {
-                        var _cmd = "";
+                try {
+                    var _cmd = "";
 
-                        _cmd = string.Format(_convertToMP4, $"\"{_basePath}\\all.{_extension}\"", $"\"{_basePath}.mp4\"");
+                    _cmd = string.Format(_convertToMP4, $"\"{_basePath}\\all.{_extension}\"", $"\"{_basePath}.mp4\"");
 
-                        var startInfo = new ProcessStartInfo {
-                            WindowStyle = ProcessWindowStyle.Hidden,
-                            FileName = "cmd.exe",
-                            Arguments = "/C " + _cmd
-                        };
+                    var startInfo = new ProcessStartInfo {
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        FileName = "cmd.exe",
+                        Arguments = "/C " + _cmd
+                    };
 
-                        var process = new Process {
-                            StartInfo = startInfo
-                        };
+                    var process = new Process {
+                        StartInfo = startInfo
+                    };
 
-                        process.Start();
-                        process.WaitForExit();
-                    } catch (Exception) {
-                        Message("It was not possible to convert to MP4, check the folder");
-                        Process.Start("explorer.exe", _downloadPath);
-                        ThreadStop();
-                    }
+                    process.Start();
+                    process.WaitForExit();
+                } catch (Exception) {
+                    Message("It was not possible to convert to MP4, check the folder");
+                    Process.Start("explorer.exe", _downloadPath);
+                    ThreadStop();
+                }
 
                 UpdateStatus(1);
             } else {
                 UpdateStatus(0, $"Moving File");
-                File.Move(_basePath + "\\all.ts", $"\\{_basePath}.ts");
+                File.Move($"{_basePath}\\all.{_extension}", $"{Environment.CurrentDirectory}\\{_basePath}.{_extension}");
                 UpdateStatus(1);
             }
         }
