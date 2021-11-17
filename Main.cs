@@ -25,6 +25,7 @@ namespace m3u8_Downloader {
         private string _basePath = "";
         private string _mergeFiles = "";
         private Thread _th;
+        private bool _threadStatus = false;
         private bool _readMasterm3u8 = false;
 
         public Main() {
@@ -47,33 +48,47 @@ namespace m3u8_Downloader {
             _url = tLink.Text;
             _th = new Thread(Execute);
             _th.IsBackground = true;
+            _threadStatus = true;
+
             _th.Start();
         }
 
         public void ThreadStop() {
+            _threadStatus = false; //Interrupt was not enough it still executed until de end
             Unlock();
-            _th.Interrupt();
         }
 
         public void Execute() {
-            SetBaseUrl(_url);
-            ReadM3u8(_url);
+            if (_threadStatus)
+                SetBaseUrl(_url);
+
+            if (_threadStatus)
+                ReadM3u8(_url);
 
             if (_videoList.Count > 0 || _m3u8List.Count > 0) {
-                if (_m3u8List.Count > 0) {
-                    CheckM3u8List();
-                    return;
-                } else
-                    DownloadFiles();
 
-                MergeFiles();
-                ConvertToMP4();
-                CleanUp();
+                if (_threadStatus)
+                    if (_m3u8List.Count > 0) {
+                        CheckM3u8List();
+                        return;
+                    } else
+                        DownloadFiles();
 
-                UpdateStatus(0, $"Finished");
-                Message("Finished!");
-                Process.Start("explorer.exe", Environment.CurrentDirectory);
-                ThreadStop();
+                if (_threadStatus)
+                    MergeFiles();
+
+                if (_threadStatus)
+                    ConvertToMP4();
+
+                if (_threadStatus)
+                    CleanUp();
+
+                if (_threadStatus) {
+                    UpdateStatus(0, $"Finished");
+                    //Message("Finished!");
+                    Process.Start("explorer.exe", Environment.CurrentDirectory);
+                    ThreadStop();
+                }
             }
         }
 
@@ -85,11 +100,10 @@ namespace m3u8_Downloader {
                 _uArray.RemoveAt(_uArray.Count - 1);
 
             _basePath = _uArray[^1];
-
             _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
 
-            if (_basePath.Length > 50)
-                _basePath = "index";
+            if (_basePath.Length > 50 || _basePath.Contains("index"))
+                _basePath = Guid.NewGuid().ToString();
 
             _downloadPath = Environment.CurrentDirectory + "\\" + _basePath;
 
@@ -102,11 +116,15 @@ namespace m3u8_Downloader {
         public void CheckM3u8List() {
             UpdateStatus(0, "Reading master m3u8");
 
-            var _s = new Selector();
-            _s.SetList(_m3u8List);
-            _s.ShowDialog();
-            _url = _s.SelectedItem;
-            _s.Dispose();
+            if (_m3u8List.Count == 1)
+                _url = _m3u8List[0].Url;
+            else {
+                var _s = new Selector();
+                _s.SetList(_m3u8List);
+                _s.ShowDialog();
+                _url = _s.SelectedItem;
+                _s.Dispose();
+            }
 
             _readMasterm3u8 = true;
             Execute();
@@ -217,8 +235,23 @@ namespace m3u8_Downloader {
                     if (i % 50 == 0) // Sleep Every 50 to hide from sites that block downloads
                         Thread.Sleep(1500);
 
-                    using (var client = new WebClient())
-                        client.DownloadFile(_videoList[i], $"{_downloadPath}\\{i:00}.{_extension}");
+                    var j = 0;
+                    while (j < 3) {
+                        try {
+                            using (var client = new WebClient())
+                                client.DownloadFile(_videoList[i], $"{_downloadPath}\\{i:00}.{_extension}");
+                            j = 4;
+                        } catch (Exception) {
+                            UpdateStatus(0, $"Error on File ({i + 1}/{_videoList.Count}) - Waiting");
+                            Thread.Sleep(10000); // You might have got catch let's pretend to be a browser
+
+                            UpdateStatus(0, $"Retrying File ({i + 1}/{_videoList.Count})");
+                            j++;
+                        }
+                    }
+
+                    if (j == 3)
+                        throw new Exception();
                 }
             } catch (Exception) {
                 Message("An error occoured while downloading the video files");
@@ -241,11 +274,11 @@ namespace m3u8_Downloader {
 
                 var startInfo = new ProcessStartInfo {
                     WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
                     FileName = "cmd.exe",
-                    Arguments = "/C " + _cmd
+                    Arguments = "/C " + _cmd,
+                    WorkingDirectory = _downloadPath
                 };
-
-                startInfo.WorkingDirectory = _downloadPath;
 
                 var process = new Process {
                     StartInfo = startInfo
@@ -275,6 +308,7 @@ namespace m3u8_Downloader {
 
                     var startInfo = new ProcessStartInfo {
                         WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true,
                         FileName = "cmd.exe",
                         Arguments = "/C " + _cmd
                     };
