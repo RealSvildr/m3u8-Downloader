@@ -100,7 +100,11 @@ namespace m3u8_Downloader {
                 _uArray.RemoveAt(_uArray.Count - 1);
 
             _basePath = _uArray[^1];
-            _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
+
+            if (_basePath.IndexOf(".m3u8") > -1)
+                _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
+            else
+                _basePath = _basePath.Replace("?", "").Replace("hash=", "");
 
             if (_basePath.Length > 50 || _basePath.Contains("index"))
                 _basePath = Guid.NewGuid().ToString();
