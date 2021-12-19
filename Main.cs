@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace m3u8_Downloader {
     public partial class Main : Form {
-        private readonly string _mergeTS = "copy /b {0} all.{1}"; // copy /b segment1_0_av.ts+segment2_0_av.ts+segment3_0_av.ts all.ts
+        private readonly string _mergeTS = "copy /b {0} [outputName].{1}"; // copy /b segment1_0_av.ts+segment2_0_av.ts+segment3_0_av.ts all.ts
         private readonly string _convertToMP4 = "ffmpeg -i {0} -acodec copy -vcodec copy {1}"; // ffmpeg -i all.ts -acodec copy -vcodec copy all.mp4
 
         private string _url = "";
@@ -84,9 +84,10 @@ namespace m3u8_Downloader {
                     CleanUp();
 
                 if (_threadStatus) {
+                    if (cOpenFolder.Checked)
+                        Process.Start("explorer.exe", Environment.CurrentDirectory);
+
                     UpdateStatus(0, $"Finished");
-                    //Message("Finished!");
-                    Process.Start("explorer.exe", Environment.CurrentDirectory);
                     ThreadStop();
                 }
             }
@@ -94,22 +95,29 @@ namespace m3u8_Downloader {
 
         public void SetBaseUrl(string url) {
             UpdateStatus(0, "Setting Base Url");
+
             var _uArray = url.Split("/").ToList();
 
             while (_uArray[^1] == "")
                 _uArray.RemoveAt(_uArray.Count - 1);
 
-            _basePath = _uArray[^1];
+            if (!string.IsNullOrEmpty(tName.Text))
+                _basePath = tName.Text;
+            else {
 
-            if (_basePath.IndexOf(".m3u8") > -1)
-                _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
-            else
-                _basePath = _basePath.Replace("?", "").Replace("hash=", "");
 
-            if (_basePath.Length > 50 || _basePath.Contains("index"))
-                _basePath = Guid.NewGuid().ToString();
+                _basePath = _uArray[^1];
 
-            _downloadPath = Environment.CurrentDirectory + "\\" + _basePath;
+                if (_basePath.IndexOf(".m3u8") > -1)
+                    _basePath = _basePath.Substring(0, _basePath.IndexOf(".m3u8"));
+                else
+                    _basePath = _basePath.Replace("?", "").Replace("hash=", "");
+
+                if (_basePath.Length > 50 || _basePath.Contains("index"))
+                    _basePath = Guid.NewGuid().ToString();
+            }
+
+            _downloadPath = Environment.CurrentDirectory + "\\" + FormatFileName(_basePath);
 
             _uArray.RemoveAt(_uArray.Count - 1);
             _thisURL = string.Join("/", _uArray) + "/";
@@ -267,29 +275,49 @@ namespace m3u8_Downloader {
             UpdateStatus(0, $"Merging TS Files");
 
             try {
-                _mergeFiles = "";
-                if (!string.IsNullOrEmpty(_videoMap))
-                    _mergeFiles += "map.mp4";
+                if (_videoList.Count < 500) {
+                    _mergeFiles = "";
+                    if (!string.IsNullOrEmpty(_videoMap))
+                        _mergeFiles += "map.mp4";
 
-                for (var i = 0; i < _videoList.Count; i++)
-                    _mergeFiles += $"+{i:00}.{_extension}";
+                    for (var i = 0; i < _videoList.Count; i++)
+                        _mergeFiles += $"+{i:00}.{_extension}";
 
-                var _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
+                    var _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
+                    MergeFilesExecute(_cmd);
+                } else {
+                    var i = 0;
+                    var counter = 500;
+                    var mergeList = new List<string>();
+                    var _cmd = "";
 
-                var startInfo = new ProcessStartInfo {
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    CreateNoWindow = true,
-                    FileName = "cmd.exe",
-                    Arguments = "/C " + _cmd,
-                    WorkingDirectory = _downloadPath
-                };
+                    while (i != counter) {
+                        _mergeFiles = "";
 
-                var process = new Process {
-                    StartInfo = startInfo
-                };
+                        if (i == 0 && !string.IsNullOrEmpty(_videoMap))
+                            _mergeFiles += "map.mp4";
 
-                process.Start();
-                process.WaitForExit();
+                        for (var j = i; j < counter; j++)
+                            _mergeFiles += $"+{j:00}.{_extension}";
+
+                        _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
+                        MergeFilesExecute(_cmd, "merge_" + i);
+                        mergeList.Add("merge_" + i + ".ts");
+
+                        i = counter;
+                        counter = i + 500;
+                        if (counter > _videoList.Count())
+                            counter = _videoList.Count();
+                    }
+
+                    _mergeFiles = "";
+                    for (i = 0; i < mergeList.Count; i++)
+                        _mergeFiles += "+" + mergeList[i];
+
+                    _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
+                    MergeFilesExecute(_cmd);
+                }
+
             } catch (Exception) {
                 Message("Could not Merge the TS File, check the files inside the program folder");
                 Process.Start("explorer.exe", _downloadPath);
@@ -297,6 +325,22 @@ namespace m3u8_Downloader {
             }
 
             UpdateStatus(1);
+        }
+        private void MergeFilesExecute(string cmd, string fileName = "all") {
+            var startInfo = new ProcessStartInfo {
+                WindowStyle = ProcessWindowStyle.Hidden,
+                CreateNoWindow = true,
+                FileName = "cmd.exe",
+                Arguments = "/C " + cmd.Replace("[outputName]", fileName),
+                WorkingDirectory = _downloadPath
+            };
+
+            var process = new Process {
+                StartInfo = startInfo
+            };
+
+            process.Start();
+            process.WaitForExit();
         }
 
         public void ConvertToMP4() {
@@ -351,7 +395,9 @@ namespace m3u8_Downloader {
                 return;
             }
 
+            tName.Enabled = false;
             tLink.Enabled = false;
+            cOpenFolder.Enabled = false;
             cConvert.Enabled = false;
             bDownload.Text = "Stop";
 
@@ -373,8 +419,10 @@ namespace m3u8_Downloader {
             _readMasterm3u8 = false;
             _videoMap = "";
 
+            tName.Enabled = true;
             tLink.Enabled = true;
             cConvert.Enabled = true;
+            cOpenFolder.Enabled = true;
             bDownload.Text = "Download";
 
             progressBar.Value = 0;
@@ -417,6 +465,13 @@ namespace m3u8_Downloader {
             }
 
             MessageBox.Show(msg);
+        }
+
+        public string FormatFileName(string name) {
+            if (string.IsNullOrEmpty(name))
+                return "no-name";
+
+            return name.Replace("\\", "").Replace("/", "").Replace(":", "").Replace("*", "").Replace("?", "").Replace("\"", "").Replace("<", "").Replace(">", "").Replace("|", "");
         }
     }
 
