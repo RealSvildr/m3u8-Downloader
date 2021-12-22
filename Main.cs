@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Windows.Forms;
 using System.Threading;
+using Microsoft.VisualBasic.FileIO;
 
 namespace m3u8_Downloader {
     public partial class Main : Form {
@@ -253,6 +254,8 @@ namespace m3u8_Downloader {
                 }
 
                 for (var i = 0; i < _videoList.Count; i++) {
+                    if (!_threadStatus) return;
+
                     UpdateStatus(1, $"Downloading Files ({i + 1}/{_videoList.Count})");
 
                     if (i % 50 == 0) // Sleep Every 50 to hide from sites that block downloads
@@ -360,7 +363,7 @@ namespace m3u8_Downloader {
             var _ext = !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension;
 
             if (_extension != "ts")
-                File.Move($"{_basePath}\\all.{_ext}" , $"{Environment.CurrentDirectory}\\{_basePath}.mp4");
+                File.Move($"{_basePath}\\all.{_ext}", $"{Environment.CurrentDirectory}\\{_basePath}.mp4");
             else if (cConvert.Checked) {
                 UpdateStatus(0, $"Converting to MP4");
 
@@ -398,7 +401,14 @@ namespace m3u8_Downloader {
 
         public void CleanUp() {
             UpdateStatus(0, $"Cleaning Up");
-            Directory.Delete(_downloadPath, true);
+
+            // Move to Trash
+            FileSystem.DeleteFile(
+                _downloadPath,
+                UIOption.OnlyErrorDialogs,
+                RecycleOption.SendToRecycleBin
+            );
+
             UpdateStatus(1);
         }
 
