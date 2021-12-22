@@ -150,69 +150,29 @@ namespace m3u8_Downloader {
             _videoList = new List<string>();
             _m3u8List = new List<M3U8>();
 
+
             try {
-                WebRequest request = WebRequest.Create(url);
-                request.Credentials = CredentialCache.DefaultCredentials;
-                _baseURL = (request.RequestUri.Port == 443 ? "https://" : "http://") + request.RequestUri.Authority;
+                var fInfo = new FileInfo(url);
 
-                using (var response = (HttpWebResponse)request.GetResponse()) {
-                    if ((new string[] { "application/x-mpegurl", "vnd.apple.mpegurl", "application/vnd.apple.mpegurl" }).Contains(response.ContentType.ToLower())) {
-                        using (var _sr = new StreamReader(response.GetResponseStream())) {
-                            string line = "";
-                            string prevLine = "";
-                            while ((line = _sr.ReadLine()) != null) {
-                                if (line.StartsWith("#EXT-X-MAP:URI=")) {
-                                    line = line.Replace("#EXT-X-MAP:URI=", "");
-                                    line = line.Trim('"');
+                if (fInfo.Exists) {
+                    ReadFileStream(new StreamReader(url).BaseStream);
+                } else {
+                    WebRequest request = WebRequest.Create(url);
+                    request.Credentials = CredentialCache.DefaultCredentials;
+                    _baseURL = (request.RequestUri.Port == 443 ? "https://" : "http://") + request.RequestUri.Authority;
 
-                                    if (line.StartsWith("/"))
-                                        line = _baseURL + line;
-                                    else if (!line.Contains("http"))
-                                        line = _thisURL + line;
-
-                                    _videoMap = line;
-                                } else if (line.Contains(".ts") || line.Contains(".m4s")) {
-                                    if (line.StartsWith("/"))
-                                        line = _baseURL + line;
-                                    else if (!line.Contains("http"))
-                                        line = _thisURL + line;
-
-
-                                    _videoList.Add(line);
-                                } else if (line.Contains(".m3u8")) {
-                                    if (line.StartsWith("/"))
-                                        line = _baseURL + line;
-                                    else if (!line.Contains("http"))
-                                        line = _thisURL + line;
-
-                                    var m3u8 = new M3U8() { Url = line };
-
-                                    foreach (var info in prevLine.Split(",")) {
-                                        if (info.ToLower().Contains("bandwidth=")) {
-                                            m3u8.Bandwidth = info.ToLower().Replace("bandwidth=", "");
-                                        } else if (info.ToLower().Contains("resolution=")) {
-                                            m3u8.Resolution = info.ToLower().Replace("resolution=", "");
-                                        } else if (info.ToLower().Contains("codecs=")) {
-                                            m3u8.Codecs = info.ToLower().Replace("codecs=", "");
-                                        } else if (info.ToLower().Contains("name=")) {
-                                            m3u8.Name = info.ToLower().Replace("name=", "");
-                                        }
-                                    }
-
-                                    _m3u8List.Add(m3u8);
-                                }
-
-                                prevLine = line;
-                            }
+                    using (var response = (HttpWebResponse)request.GetResponse()) {
+                        if ((new string[] { "application/x-mpegurl", "vnd.apple.mpegurl", "application/vnd.apple.mpegurl" }).Contains(response.ContentType.ToLower())) {
+                            ReadFileStream(response.GetResponseStream());
+                        } else {
+                            Message("Wrong Url!");
+                            ThreadStop();
                         }
-                    } else {
-                        Message("Wrong Url!");
-                        ThreadStop();
                     }
                 }
 
                 if (_videoList.Count > 0)
-                    _extension = _videoList[0].Contains(".ts") ? "ts" : "m4s";
+                    _extension = _videoList[0].Contains(".m4s") ? "m4s" : _videoList[0].Contains(".mp4") ? "mp4" : "ts";
 
             } catch (Exception e) {
                 if (e.Message.Contains("410"))
@@ -226,6 +186,57 @@ namespace m3u8_Downloader {
             }
 
             UpdateStatus(1);
+        }
+
+        public void ReadFileStream(Stream str) {
+            using (var _sr = new StreamReader(str)) {
+                string line = "";
+                string prevLine = "";
+                while ((line = _sr.ReadLine()) != null) {
+                    if (line.StartsWith("#EXT-X-MAP:URI=")) {
+                        line = line.Replace("#EXT-X-MAP:URI=", "");
+                        line = line.Trim('"');
+
+                        if (line.StartsWith("/"))
+                            line = _baseURL + line;
+                        else if (!line.Contains("http"))
+                            line = _thisURL + line;
+
+                        _videoMap = line;
+                    } else if (line.Contains(".m3u8")) {
+                        if (line.StartsWith("/"))
+                            line = _baseURL + line;
+                        else if (!line.Contains("http"))
+                            line = _thisURL + line;
+
+                        var m3u8 = new M3U8() { Url = line };
+
+                        foreach (var info in prevLine.Split(",")) {
+                            if (info.ToLower().Contains("bandwidth=")) {
+                                m3u8.Bandwidth = info.ToLower().Replace("bandwidth=", "");
+                            } else if (info.ToLower().Contains("resolution=")) {
+                                m3u8.Resolution = info.ToLower().Replace("resolution=", "");
+                            } else if (info.ToLower().Contains("codecs=")) {
+                                m3u8.Codecs = info.ToLower().Replace("codecs=", "");
+                            } else if (info.ToLower().Contains("name=")) {
+                                m3u8.Name = info.ToLower().Replace("name=", "");
+                            }
+                        }
+
+                        _m3u8List.Add(m3u8);
+                    } else if (line.Contains(".ts") || line.Contains(".m4s") || line.Contains("http")) {
+                        if (line.StartsWith("/"))
+                            line = _baseURL + line;
+                        else if (!line.Contains("http"))
+                            line = _thisURL + line;
+
+
+                        _videoList.Add(line);
+                    }
+
+                    prevLine = line;
+                }
+            }
         }
 
         public void DownloadFiles() {
@@ -275,6 +286,8 @@ namespace m3u8_Downloader {
             UpdateStatus(0, $"Merging TS Files");
 
             try {
+                var _ext = !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension;
+
                 if (_videoList.Count < 500) {
                     _mergeFiles = "";
                     if (!string.IsNullOrEmpty(_videoMap))
@@ -283,7 +296,7 @@ namespace m3u8_Downloader {
                     for (var i = 0; i < _videoList.Count; i++)
                         _mergeFiles += $"+{i:00}.{_extension}";
 
-                    var _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
+                    var _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), _ext);
                     MergeFilesExecute(_cmd);
                 } else {
                     var i = 0;
@@ -300,9 +313,9 @@ namespace m3u8_Downloader {
                         for (var j = i; j < counter; j++)
                             _mergeFiles += $"+{j:00}.{_extension}";
 
-                        _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension);
+                        _cmd = string.Format(_mergeTS, _mergeFiles.TrimStart('+'), _ext);
                         MergeFilesExecute(_cmd, "merge_" + i);
-                        mergeList.Add("merge_" + i + ".ts");
+                        mergeList.Add("merge_" + i + "." + _ext);
 
                         i = counter;
                         counter = i + 500;
@@ -344,8 +357,10 @@ namespace m3u8_Downloader {
         }
 
         public void ConvertToMP4() {
-            if (!string.IsNullOrEmpty(_videoMap))
-                File.Move(_basePath + "\\all.mp4", Environment.CurrentDirectory + $"\\{_basePath}.mp4");
+            var _ext = !string.IsNullOrEmpty(_videoMap) ? "mp4" : _extension;
+
+            if (_extension != "ts")
+                File.Move($"{_basePath}\\all.{_ext}" , $"{Environment.CurrentDirectory}\\{_basePath}.mp4");
             else if (cConvert.Checked) {
                 UpdateStatus(0, $"Converting to MP4");
 
@@ -472,6 +487,10 @@ namespace m3u8_Downloader {
                 return "no-name";
 
             return name.Replace("\\", "").Replace("/", "").Replace(":", "").Replace("*", "").Replace("?", "").Replace("\"", "").Replace("<", "").Replace(">", "").Replace("|", "");
+        }
+
+        private void bFolder_Click(object sender, EventArgs e) {
+            Process.Start("explorer.exe", Environment.CurrentDirectory);
         }
     }
 

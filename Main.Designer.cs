@@ -33,6 +33,7 @@ namespace m3u8_Downloader {
             this.label2 = new System.Windows.Forms.Label();
             this.tName = new System.Windows.Forms.TextBox();
             this.cOpenFolder = new System.Windows.Forms.CheckBox();
+            this.bFolder = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // bDownload
@@ -55,6 +56,8 @@ namespace m3u8_Downloader {
             // cConvert
             // 
             this.cConvert.AutoSize = true;
+            this.cConvert.Checked = true;
+            this.cConvert.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cConvert.Location = new System.Drawing.Point(15, 70);
             this.cConvert.Name = "cConvert";
             this.cConvert.Size = new System.Drawing.Size(109, 19);
@@ -114,11 +117,22 @@ namespace m3u8_Downloader {
             this.cOpenFolder.Text = "Open Folder";
             this.cOpenFolder.UseVisualStyleBackColor = true;
             // 
+            // bFolder
+            // 
+            this.bFolder.Location = new System.Drawing.Point(466, 95);
+            this.bFolder.Name = "bFolder";
+            this.bFolder.Size = new System.Drawing.Size(52, 23);
+            this.bFolder.TabIndex = 9;
+            this.bFolder.Text = "Folder";
+            this.bFolder.UseVisualStyleBackColor = true;
+            this.bFolder.Click += new System.EventHandler(this.bFolder_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(610, 127);
+            this.Controls.Add(this.bFolder);
             this.Controls.Add(this.cOpenFolder);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.tName);
@@ -146,6 +160,7 @@ namespace m3u8_Downloader {
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox tName;
         private System.Windows.Forms.CheckBox cOpenFolder;
+        private System.Windows.Forms.Button bFolder;
     }
 }
 
