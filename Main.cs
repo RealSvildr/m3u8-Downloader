@@ -403,7 +403,7 @@ namespace m3u8_Downloader {
             UpdateStatus(0, $"Cleaning Up");
 
             // Move to Trash
-            FileSystem.DeleteFile(
+            FileSystem.DeleteDirectory(
                 _downloadPath,
                 UIOption.OnlyErrorDialogs,
                 RecycleOption.SendToRecycleBin
