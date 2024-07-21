@@ -24,129 +24,170 @@ namespace m3u8_Downloader {
         ///  the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            this.bDownload = new System.Windows.Forms.Button();
-            this.tLink = new System.Windows.Forms.TextBox();
-            this.cConvert = new System.Windows.Forms.CheckBox();
-            this.progressBar = new System.Windows.Forms.ProgressBar();
-            this.lStatus = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.tName = new System.Windows.Forms.TextBox();
-            this.cOpenFolder = new System.Windows.Forms.CheckBox();
-            this.bFolder = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            bDownload = new System.Windows.Forms.Button();
+            tLink = new System.Windows.Forms.TextBox();
+            cConvert = new System.Windows.Forms.CheckBox();
+            progressBar = new System.Windows.Forms.ProgressBar();
+            lStatus = new System.Windows.Forms.Label();
+            label1 = new System.Windows.Forms.Label();
+            label2 = new System.Windows.Forms.Label();
+            tName = new System.Windows.Forms.TextBox();
+            cOpenFolder = new System.Windows.Forms.CheckBox();
+            bFolder = new System.Windows.Forms.Button();
+            cAutoName = new System.Windows.Forms.CheckBox();
+            cHighestRes = new System.Windows.Forms.CheckBox();
+            bPasteStart = new System.Windows.Forms.Button();
+            SuspendLayout();
             // 
             // bDownload
             // 
-            this.bDownload.Location = new System.Drawing.Point(524, 95);
-            this.bDownload.Name = "bDownload";
-            this.bDownload.Size = new System.Drawing.Size(75, 23);
-            this.bDownload.TabIndex = 5;
-            this.bDownload.Text = "Download";
-            this.bDownload.UseVisualStyleBackColor = true;
-            this.bDownload.Click += new System.EventHandler(this.BDownload_Click);
+            bDownload.Location = new System.Drawing.Point(524, 95);
+            bDownload.Name = "bDownload";
+            bDownload.Size = new System.Drawing.Size(75, 23);
+            bDownload.TabIndex = 5;
+            bDownload.Text = "Download";
+            bDownload.UseVisualStyleBackColor = true;
+            bDownload.Click += BDownload_Click;
             // 
             // tLink
             // 
-            this.tLink.Location = new System.Drawing.Point(53, 41);
-            this.tLink.Name = "tLink";
-            this.tLink.Size = new System.Drawing.Size(546, 23);
-            this.tLink.TabIndex = 2;
+            tLink.Location = new System.Drawing.Point(53, 41);
+            tLink.Name = "tLink";
+            tLink.Size = new System.Drawing.Size(546, 23);
+            tLink.TabIndex = 2;
             // 
             // cConvert
             // 
-            this.cConvert.AutoSize = true;
-            this.cConvert.Checked = true;
-            this.cConvert.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cConvert.Location = new System.Drawing.Point(15, 70);
-            this.cConvert.Name = "cConvert";
-            this.cConvert.Size = new System.Drawing.Size(109, 19);
-            this.cConvert.TabIndex = 3;
-            this.cConvert.Text = "Convert to mp4";
-            this.cConvert.UseVisualStyleBackColor = true;
+            cConvert.AutoSize = true;
+            cConvert.Checked = true;
+            cConvert.CheckState = System.Windows.Forms.CheckState.Checked;
+            cConvert.Location = new System.Drawing.Point(15, 70);
+            cConvert.Name = "cConvert";
+            cConvert.Size = new System.Drawing.Size(109, 19);
+            cConvert.TabIndex = 3;
+            cConvert.Text = "Convert to mp4";
+            cConvert.UseVisualStyleBackColor = true;
             // 
             // progressBar
             // 
-            this.progressBar.Location = new System.Drawing.Point(229, 70);
-            this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(370, 19);
-            this.progressBar.TabIndex = 4;
+            progressBar.Location = new System.Drawing.Point(299, 70);
+            progressBar.Name = "progressBar";
+            progressBar.Size = new System.Drawing.Size(300, 19);
+            progressBar.TabIndex = 4;
             // 
             // lStatus
             // 
-            this.lStatus.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.lStatus.AutoSize = true;
-            this.lStatus.Location = new System.Drawing.Point(227, 92);
-            this.lStatus.Name = "lStatus";
-            this.lStatus.Size = new System.Drawing.Size(42, 15);
-            this.lStatus.TabIndex = 5;
-            this.lStatus.Text = "lStatus";
+            lStatus.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            lStatus.AutoSize = true;
+            lStatus.Location = new System.Drawing.Point(299, 99);
+            lStatus.Name = "lStatus";
+            lStatus.Size = new System.Drawing.Size(42, 15);
+            lStatus.TabIndex = 5;
+            lStatus.Text = "lStatus";
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(15, 44);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(32, 15);
-            this.label1.TabIndex = 6;
-            this.label1.Text = "Link:";
+            label1.AutoSize = true;
+            label1.Location = new System.Drawing.Point(15, 44);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(32, 15);
+            label1.TabIndex = 6;
+            label1.Text = "Link:";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(5, 15);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(42, 15);
-            this.label2.TabIndex = 8;
-            this.label2.Text = "Name:";
+            label2.AutoSize = true;
+            label2.Location = new System.Drawing.Point(5, 15);
+            label2.Name = "label2";
+            label2.Size = new System.Drawing.Size(42, 15);
+            label2.TabIndex = 8;
+            label2.Text = "Name:";
             // 
             // tName
             // 
-            this.tName.Location = new System.Drawing.Point(53, 12);
-            this.tName.Name = "tName";
-            this.tName.Size = new System.Drawing.Size(546, 23);
-            this.tName.TabIndex = 1;
+            tName.Location = new System.Drawing.Point(53, 12);
+            tName.Name = "tName";
+            tName.ReadOnly = true;
+            tName.Size = new System.Drawing.Size(546, 23);
+            tName.TabIndex = 1;
             // 
             // cOpenFolder
             // 
-            this.cOpenFolder.AutoSize = true;
-            this.cOpenFolder.Location = new System.Drawing.Point(15, 95);
-            this.cOpenFolder.Name = "cOpenFolder";
-            this.cOpenFolder.Size = new System.Drawing.Size(91, 19);
-            this.cOpenFolder.TabIndex = 4;
-            this.cOpenFolder.Text = "Open Folder";
-            this.cOpenFolder.UseVisualStyleBackColor = true;
+            cOpenFolder.AutoSize = true;
+            cOpenFolder.Location = new System.Drawing.Point(130, 98);
+            cOpenFolder.Name = "cOpenFolder";
+            cOpenFolder.Size = new System.Drawing.Size(91, 19);
+            cOpenFolder.TabIndex = 4;
+            cOpenFolder.Text = "Open Folder";
+            cOpenFolder.UseVisualStyleBackColor = true;
             // 
             // bFolder
             // 
-            this.bFolder.Location = new System.Drawing.Point(466, 95);
-            this.bFolder.Name = "bFolder";
-            this.bFolder.Size = new System.Drawing.Size(52, 23);
-            this.bFolder.TabIndex = 9;
-            this.bFolder.Text = "Folder";
-            this.bFolder.UseVisualStyleBackColor = true;
-            this.bFolder.Click += new System.EventHandler(this.bFolder_Click);
+            bFolder.Location = new System.Drawing.Point(241, 67);
+            bFolder.Name = "bFolder";
+            bFolder.Size = new System.Drawing.Size(52, 23);
+            bFolder.TabIndex = 9;
+            bFolder.Text = "Folder";
+            bFolder.UseVisualStyleBackColor = true;
+            bFolder.Click += bFolder_Click;
+            // 
+            // cAutoName
+            // 
+            cAutoName.AutoSize = true;
+            cAutoName.Checked = true;
+            cAutoName.CheckState = System.Windows.Forms.CheckState.Checked;
+            cAutoName.Location = new System.Drawing.Point(130, 70);
+            cAutoName.Name = "cAutoName";
+            cAutoName.Size = new System.Drawing.Size(87, 19);
+            cAutoName.TabIndex = 10;
+            cAutoName.Text = "Auto Name";
+            cAutoName.UseVisualStyleBackColor = true;
+            cAutoName.CheckedChanged += cAutoName_CheckedChanged;
+            // 
+            // cHighestRes
+            // 
+            cHighestRes.AutoSize = true;
+            cHighestRes.Checked = true;
+            cHighestRes.CheckState = System.Windows.Forms.CheckState.Checked;
+            cHighestRes.Location = new System.Drawing.Point(15, 98);
+            cHighestRes.Name = "cHighestRes";
+            cHighestRes.Size = new System.Drawing.Size(88, 19);
+            cHighestRes.TabIndex = 11;
+            cHighestRes.Text = "Highest Res";
+            cHighestRes.UseVisualStyleBackColor = true;
+            // 
+            // bPasteStart
+            // 
+            bPasteStart.Location = new System.Drawing.Point(443, 95);
+            bPasteStart.Name = "bPasteStart";
+            bPasteStart.Size = new System.Drawing.Size(75, 23);
+            bPasteStart.TabIndex = 12;
+            bPasteStart.Text = "Paste Start";
+            bPasteStart.UseVisualStyleBackColor = true;
+            bPasteStart.Click += bPasteStart_Click;
             // 
             // Main
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(610, 127);
-            this.Controls.Add(this.bFolder);
-            this.Controls.Add(this.cOpenFolder);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.tName);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.lStatus);
-            this.Controls.Add(this.progressBar);
-            this.Controls.Add(this.cConvert);
-            this.Controls.Add(this.tLink);
-            this.Controls.Add(this.bDownload);
-            this.Name = "Main";
-            this.Text = "m3u8 Downloader";
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(610, 127);
+            Controls.Add(bPasteStart);
+            Controls.Add(cHighestRes);
+            Controls.Add(cAutoName);
+            Controls.Add(bFolder);
+            Controls.Add(cOpenFolder);
+            Controls.Add(label2);
+            Controls.Add(tName);
+            Controls.Add(label1);
+            Controls.Add(lStatus);
+            Controls.Add(progressBar);
+            Controls.Add(cConvert);
+            Controls.Add(tLink);
+            Controls.Add(bDownload);
+            Name = "Main";
+            Text = "m3u8 Downloader";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -161,6 +202,9 @@ namespace m3u8_Downloader {
         private System.Windows.Forms.TextBox tName;
         private System.Windows.Forms.CheckBox cOpenFolder;
         private System.Windows.Forms.Button bFolder;
+        private System.Windows.Forms.CheckBox cAutoName;
+        private System.Windows.Forms.CheckBox cHighestRes;
+        private System.Windows.Forms.Button bPasteStart;
     }
 }
 
